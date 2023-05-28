@@ -100,7 +100,7 @@ def profile(request, username):
         .filter(author=profile.id)
         .annotate(comment_count=Count('comments'))
         .order_by('-pub_date')
-        )
+    )
     page_obj = paginator_func(request, profile_posts)
     context = {'profile': profile, 'page_obj': page_obj}
     return render(request, template, context)
