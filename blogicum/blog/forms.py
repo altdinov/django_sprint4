@@ -1,9 +1,7 @@
 from django import forms
-from django.contrib.auth import get_user_model
+from django.utils import timezone
 
-from .models import Comment, Post
-
-User = get_user_model()
+from .models import Comment, Post, User
 
 
 class CustomUserChangeForm(forms.ModelForm):
@@ -13,12 +11,15 @@ class CustomUserChangeForm(forms.ModelForm):
 
 
 class PostForm(forms.ModelForm):
+    pub_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(format='%Y-%m-%d %H:%M:%S'),
+        initial=timezone.now(),
+        label='Дата и время публ.'
+    )
+
     class Meta:
         model = Post
         exclude = ('author', 'is_published')
-        widgets = {
-            'pub_date': forms.DateTimeInput(attrs={'type': 'datetime-local'})
-        }
 
 
 class CommentForm(forms.ModelForm):

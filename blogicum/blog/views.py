@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
@@ -7,10 +6,8 @@ from django.urls import reverse
 from django.views.generic import CreateView, DetailView, UpdateView
 
 from .forms import CommentForm, CustomUserChangeForm, PostForm
-from .models import Category, Comment, Post
+from .models import Category, Comment, Post, User
 from .utils import paginator_func
-
-User = get_user_model()
 
 
 def index(request):
@@ -39,7 +36,6 @@ def category_posts(request, category_slug):
 
 
 class PostDetailView(DetailView):
-    model = Post
     template_name = 'blog/detail.html'
     pk_url_kwarg = 'id'
     queryset = Post.objects.select_related('author', 'category', 'location')
@@ -63,14 +59,13 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
 
 class PostUpdateView(LoginRequiredMixin, UpdateView):
-    posts = None
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.posts = get_object_or_404(Post, pk=kwargs['pk'])
-        if self.posts.author != request.user:
+        post = get_object_or_404(Post, pk=kwargs['pk'])
+        if post.author != request.user:
             return redirect('blog:post_detail', id=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
 
@@ -79,13 +74,13 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'id': self.posts.id})
+        return reverse('blog:post_detail', kwargs={'id': self.kwargs['pk']})
 
 
+@login_required
 def edit_profile(request):
     template = 'blog/user.html'
-    instance = get_object_or_404(User, username=request.user)
-    form = CustomUserChangeForm(request.POST or None, instance=instance)
+    form = CustomUserChangeForm(request.POST or None, instance=request.user)
     context = {'form': form}
     if form.is_valid():
         form.save()
@@ -95,12 +90,19 @@ def edit_profile(request):
 def profile(request, username):
     template = 'blog/profile.html'
     profile = get_object_or_404(User, username=username)
-    profile_posts = (
-        Post.objects.select_related('category', 'location', 'author')
-        .filter(author=profile.id)
-        .annotate(comment_count=Count('comments'))
-        .order_by('-pub_date')
-    )
+    if request.user.username == username:
+        print('1')
+        profile_posts = (
+            Post.objects.select_related('category', 'location', 'author')
+            .filter(author=profile.id)
+            .annotate(comment_count=Count('comments'))
+            .order_by('-pub_date')
+        )
+    else:
+        print("2")
+        profile_posts = Post.filtered_objects.filter(
+            category__is_published=True, author=profile.id
+        )
     page_obj = paginator_func(request, profile_posts)
     context = {'profile': profile, 'page_obj': page_obj}
     return render(request, template, context)
@@ -141,10 +143,10 @@ def delete_comment(request, pk, comment_id):
 
 @login_required
 def delete_post(request, pk):
-    instance = get_object_or_404(Post, id=pk, author=request.user)
-    form = CommentForm(instance=instance)
+    post = get_object_or_404(Post, id=pk, author=request.user)
+    form = CommentForm(instance=post)
     context = {'form': form}
     if request.method == 'POST':
-        instance.delete()
+        post.delete()
         return redirect('blog:profile', username=request.user)
     return render(request, 'blog/create.html', context)

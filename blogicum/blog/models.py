@@ -22,7 +22,7 @@ class PublishedPostManager(models.Manager):
 class BaseModel(models.Model):
     is_published = models.BooleanField(
         default=True,
-        verbose_name='Опубликовано',
+        verbose_name='Опублик.',
         help_text='Снимите галочку, чтобы скрыть публикацию.'
     )
     created_at = models.DateTimeField(
@@ -80,7 +80,7 @@ class Post(BaseModel):
         verbose_name='Текст',
     )
     pub_date = models.DateTimeField(
-        verbose_name='Дата и время публикации',
+        verbose_name='Дата и время публ.',
         help_text='Если установить дату и время в будущем — можно '
         + 'делать отложенные публикации.'
     )
@@ -92,14 +92,14 @@ class Post(BaseModel):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор публикации',
+        verbose_name='Автор',
     )
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Местоположение',
+        verbose_name='Местопол.',
     )
     category = models.ForeignKey(
         Category,
@@ -109,6 +109,9 @@ class Post(BaseModel):
     )
     objects = models.Manager()
     filtered_objects = PublishedPostManager()
+
+    def __str__(self):
+        return self.title
 
     class Meta:
         ordering = ('-pub_date',)
@@ -125,9 +128,17 @@ class Comment(models.Model):
         Post,
         on_delete=models.CASCADE,
         related_name='comments',
+        verbose_name='Пост',
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Добавлено',
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор комментария',
+    )
 
     class Meta:
         ordering = ('created_at',)
