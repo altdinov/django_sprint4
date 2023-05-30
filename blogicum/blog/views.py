@@ -91,7 +91,6 @@ def profile(request, username):
     template = 'blog/profile.html'
     profile = get_object_or_404(User, username=username)
     if request.user.username == username:
-        print('1')
         profile_posts = (
             Post.objects.select_related('category', 'location', 'author')
             .filter(author=profile.id)
@@ -99,7 +98,6 @@ def profile(request, username):
             .order_by('-pub_date')
         )
     else:
-        print("2")
         profile_posts = Post.filtered_objects.filter(
             category__is_published=True, author=profile.id
         )
