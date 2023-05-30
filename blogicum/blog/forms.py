@@ -13,7 +13,7 @@ class CustomUserChangeForm(forms.ModelForm):
 class PostForm(forms.ModelForm):
     pub_date = forms.DateTimeField(
         widget=forms.DateTimeInput(format='%Y-%m-%d %H:%M:%S'),
-        initial=timezone.now(),
+        initial=timezone.now,
         label='Дата и время публ.'
     )
 

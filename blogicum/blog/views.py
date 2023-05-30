@@ -90,7 +90,7 @@ def edit_profile(request):
 def profile(request, username):
     template = 'blog/profile.html'
     profile = get_object_or_404(User, username=username)
-    if request.user.username == username:
+    if request.user == profile:
         profile_posts = (
             Post.objects.select_related('category', 'location', 'author')
             .filter(author=profile.id)
@@ -99,7 +99,7 @@ def profile(request, username):
         )
     else:
         profile_posts = Post.filtered_objects.filter(
-            category__is_published=True, author=profile.id
+            category__is_published=True, author=profile
         )
     page_obj = paginator_func(request, profile_posts)
     context = {'profile': profile, 'page_obj': page_obj}
@@ -146,5 +146,5 @@ def delete_post(request, pk):
     context = {'form': form}
     if request.method == 'POST':
         post.delete()
-        return redirect('blog:profile', username=request.user)
+        return redirect('blog:profile', username=request.user.username)
     return render(request, 'blog/create.html', context)
